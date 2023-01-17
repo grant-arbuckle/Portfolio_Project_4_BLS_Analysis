@@ -1,0 +1,46 @@
+import requests
+import json
+import pandas as pd
+
+headers = {'Content-type': 'application/json'}
+data = json.dumps({"seriesid": [
+    'CES0500000003'
+    ]
+        ,"startyear":"2012", "endyear":"2022", "registrationkey": "6a4fc3836e344229b9fe9dc5925c842e",
+       "catalog": "true",})
+p = requests.post('https://api.bls.gov/publicAPI/v2/timeseries/data/', data=data, headers=headers)
+json_data = json.loads(p.text)
+
+df = pd.DataFrame(columns=[
+    'series_title', 'series_id', 'seasonality', 'survey_name', 'survey_abbreviation', 'measure_data_type', 'year',
+    'period', 'period_name', 'value'
+                          ])
+
+for series in json_data['Results']['series']:
+    series_title = series['catalog']['series_title']
+    series_id = series['catalog']['series_id']
+    seasonality = series['catalog']['seasonality']
+    survey_name = series['catalog']['survey_name']
+    survey_abbreviation = series['catalog']['survey_abbreviation']
+    measure_data_type = series['catalog']['measure_data_type']
+    for data in series['data']:
+        year = data['year']
+        period = data['period']
+        period_name = data['periodName']
+        value = data['value']
+        
+        #save data in dataframe
+        df = pd.concat([df, pd.DataFrame.from_records([{
+            'series_title': series_title
+            , 'series_id': series_id
+            , 'seasonality': seasonality
+            , 'survey_name': survey_name
+            , 'survey_abbreviation': survey_abbreviation
+            , 'measure_data_type': measure_data_type
+            , 'year': year
+            , 'period': period
+            , 'period_name': period_name
+            , 'value': value
+        }])], ignore_index=True)
+
+print(df)

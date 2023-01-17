@@ -1,0 +1,48 @@
+import requests
+import json
+import pandas as pd
+
+headers = {'Content-type': 'application/json'}
+data = json.dumps({"seriesid": [
+    'APU0000706111', 'APU0000704111', 'APU0000711211', 'APU0000702111', 'APU0000717311', 'APU0000708111', 'APU0000701111'
+    , 'APU0000709112', 'APU0000711311', 'APU0000701312', 'APU0000712311', 'APU000072610', 'APU000072511'
+    , 'APU00007471A', 'APU000074714'
+    ]
+        ,"startyear":"2012", "endyear":"2022", "registrationkey": "6a4fc3836e344229b9fe9dc5925c842e",
+       "catalog": "true", "annualaverage": "true", "calculations": "true"})
+p = requests.post('https://api.bls.gov/publicAPI/v2/timeseries/data/', data=data, headers=headers)
+json_data = json.loads(p.text)
+
+df = pd.DataFrame(columns=[
+    'series_title', 'series_id', 'survey_name', 'survey_abbreviation', 'measure_data_type', 'area'
+    , 'year', 'period', 'period_name', 'value'
+                          ])
+
+for a in json_data['Results']['series']:
+    series_title = a['catalog']['series_title']
+    series_id = a['catalog']['series_id']
+    survey_name = a['catalog']['survey_name']
+    survey_abbreviation = a['catalog']['survey_abbreviation']
+    measure_data_type = a['catalog']['measure_data_type']
+    area = a['catalog']['area']
+    for b in a['data']:
+        year = b['year']
+        period = b['period']
+        period_name = b['periodName']
+        value = b['value']
+
+        #save data in dataframe
+        df = pd.concat([df, pd.DataFrame.from_records([{
+            'series_title': series_title
+            , 'series_id': series_id
+            , 'survey_name': survey_name
+            , 'survey_abbreviation': survey_abbreviation
+            , 'measure_data_type': measure_data_type
+            , 'area': area
+            , 'year': year
+            , 'period': period
+            , 'period_name': period_name
+            , 'value': value
+        }])], ignore_index=True)
+
+print(df)
